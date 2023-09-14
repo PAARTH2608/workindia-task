@@ -279,40 +279,61 @@ router.get("/matches", async (req, res) => {
 });
 
 // GET MATCH SCHEDULES
-router.get("/matches/:match_id", async (req, res) => {
+router.get('/matches/:match_id', async (req, res) => {
   try {
     // Extract match_id from the URL parameter
     const { match_id } = req.params;
 
-    // Find the match by match_id and include associated teams and players
-    const match = await Match.findByPk(match_id);
+    // Find the match by match_id and include associated teams
+    const match = await Match.findByPk(match_id, {
+      include: [
+        { model: Team, as: 'team1' },
+        { model: Team, as: 'team2' },
+      ],
+    });
 
     if (!match) {
-      return res.status(404).json({ error: "Match not found" });
+      return res.status(404).json({ error: 'Match not found' });
     }
 
-    // Map the squads to the desired response format
-    const team1 = await Team.findByPk(match.team_1);
-    const team2 = await Team.findByPk(match.team_2);
+    // Find players for each team
+    const team1Players = await Team.findByPk(match.team_1, {
+      include: [{ model: Player }],
+    });
+
+    const team2Players = await Team.findByPk(match.team_2, {
+      include: [{ model: Player }],
+    });
+
+    // Structure squads as required
+    const squads = {
+      team_1: team1Players.Players.map((player: { id: any; name: any; }) => ({
+        player_id: player.id,
+        name: player.name,
+      })),
+      team_2: team2Players.Players.map((player: { id: any; name: any; }) => ({
+        player_id: player.id,
+        name: player.name,
+      })),
+    };
 
     // Prepare the response data
     const matchResponse = {
       match_id: match.id,
-      team_1: match.team_1.name,
-      team_2: match.team_2.name,
+      team_1: match.team1.name,
+      team_2: match.team2.name,
       date: match.date,
       venue: match.venue,
       status: match.status,
-      squads: {
-        team1, team2
-      },
+      squads,
     };
 
     res.status(200).json(matchResponse);
   } catch (error) {
-    console.error("Error fetching match by match_id:", error);
-    res.status(500).json({ error: "Internal Server Error" });
+    console.error('Error fetching match by match_id:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
   }
 });
+
 
 export default router;
