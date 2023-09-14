@@ -292,7 +292,8 @@ router.get("/matches/:match_id", async (req, res) => {
     }
 
     // Map the squads to the desired response format
-    const team1 = 
+    const team1 = await Team.findByPk(match.team_1);
+    const team2 = await Team.findByPk(match.team_2);
 
     // Prepare the response data
     const matchResponse = {
@@ -302,7 +303,9 @@ router.get("/matches/:match_id", async (req, res) => {
       date: match.date,
       venue: match.venue,
       status: match.status,
-      squads: squadsResponse,
+      squads: {
+        team1, team2
+      },
     };
 
     res.status(200).json(matchResponse);
