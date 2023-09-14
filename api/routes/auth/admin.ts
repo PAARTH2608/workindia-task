@@ -12,7 +12,6 @@ router.post("/admin/signup", async (req: Request, res: Response) => {
   try {
     const { username, password, email } = req.body;
 
-    // Hash the password before saving it
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const admin = await Admin.create({
@@ -42,7 +41,6 @@ router.post(
     check("password", "Password is required").notEmpty(),
   ],
   async (req: Request, res: Response) => {
-    // Validate request body
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res
@@ -53,7 +51,6 @@ router.post(
     const { username, password } = req.body;
 
     try {
-      // Check if an admin with the given username exists
       const admin = await Admin.findOne({ where: { username } });
 
       if (!admin) {
@@ -62,7 +59,6 @@ router.post(
         });
       }
 
-      // Compare the provided password with the stored password hash
       const passwordMatch = await bcrypt.compare(password, admin.password);
 
       if (!passwordMatch) {
@@ -71,7 +67,6 @@ router.post(
         });
       }
 
-      // If the username and password are correct, generate a JWT token
       const payload = {
         user_id: admin.id,
       };
@@ -139,7 +134,6 @@ router.post("/admin/create-team", async (req: Request, res: Response) => {
   try {
     const { id } = req.body;
 
-    // Create a new team
     const team = await Team.create({
       id,
     });
@@ -172,7 +166,6 @@ router.post("/teams/:team_id/squad", async (req: Request, res: Response) => {
       role,
     });
 
-    // Add the player to the team's squad
     await team.addPlayer(player);
 
     res.status(200).json({
@@ -190,7 +183,6 @@ router.get("/players/:player_id/stats", async (req: Request, res: Response) => {
   try {
     const { player_id: playerId } = req.params;
 
-    // Find the player by player_id
     const player = await Player.findOne({
       where: { player_id: playerId },
     });
@@ -222,10 +214,8 @@ router.get("/players/:player_id/stats", async (req: Request, res: Response) => {
 // CREATE MATCH
 router.post("/matches", checkAuthorization, async (req, res) => {
   try {
-    // Extract match data from the request body
     const { team_1, team_2, date, venue } = req.body;
 
-    // Create a new match
     const match = await Match.create({
       team_1,
       team_2,
@@ -251,10 +241,8 @@ router.post("/matches", checkAuthorization, async (req, res) => {
 // GET MATCHES
 router.get("/matches", async (req, res) => {
   try {
-    // Fetch all matches from the database
     const matches = await Match.findAll();
 
-    // Map the matches to the desired response format
     const matchesResponse = matches.map(
       (match: {
         id: any;
@@ -281,10 +269,8 @@ router.get("/matches", async (req, res) => {
 // GET MATCH SCHEDULES
 router.get('/matches/:match_id', async (req, res) => {
   try {
-    // Extract match_id from the URL parameter
     const { match_id } = req.params;
 
-    // Find the match by match_id and include associated teams
     const match = await Match.findByPk(match_id, {
       include: [
         { model: Team, as: 'team1' },
@@ -296,7 +282,6 @@ router.get('/matches/:match_id', async (req, res) => {
       return res.status(404).json({ error: 'Match not found' });
     }
 
-    // Find players for each team
     const team1Players = await Team.findByPk(match.team_1, {
       include: [{ model: Player }],
     });
@@ -305,7 +290,6 @@ router.get('/matches/:match_id', async (req, res) => {
       include: [{ model: Player }],
     });
 
-    // Structure squads as required
     const squads = {
       team_1: team1Players.Players.map((player: { id: any; name: any; }) => ({
         player_id: player.id,
@@ -317,7 +301,6 @@ router.get('/matches/:match_id', async (req, res) => {
       })),
     };
 
-    // Prepare the response data
     const matchResponse = {
       match_id: match.id,
       team_1: match.team1.name,
