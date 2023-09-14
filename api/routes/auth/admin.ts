@@ -3,7 +3,8 @@ import Admin from "../../models/admin";
 import { check, validationResult } from "express-validator";
 import jwt, { Secret } from "jsonwebtoken";
 import bcrypt from "bcrypt";
-import { Player, Team } from "../../models";
+import { Match, Player, Team } from "../../models";
+import checkAuthorization from "../../middleware";
 const router = express.Router();
 
 // SIGNUP ADMIN
@@ -136,11 +137,11 @@ router.post("/admin/create-player", async (req: Request, res: Response) => {
 // CREATE TEAM
 router.post("/admin/create-team", async (req: Request, res: Response) => {
   try {
-    const { name } = req.body;
+    const { id } = req.body;
 
     // Create a new team
     const team = await Team.create({
-      name,
+      id,
     });
 
     res.status(201).json({
@@ -155,37 +156,34 @@ router.post("/admin/create-team", async (req: Request, res: Response) => {
 });
 
 // ADD PLAYER TO TEAM
-router.post(
-  "/teams/:team_id/squad",
-  async (req: Request, res: Response) => {
-    try {
-      const { team_id } = req.params;
-      const { name, role } = req.body;
+router.post("/teams/:team_id/squad", async (req: Request, res: Response) => {
+  try {
+    const { team_id } = req.params;
+    const { name, role } = req.body;
 
-      const team = await Team.findByPk(team_id);
+    const team = await Team.findByPk(team_id);
 
-      if (!team) {
-        return res.status(404).json({ error: "Team not found" });
-      }
-
-      const player = await Player.create({
-        name,
-        role,
-      });
-
-      // Add the player to the team's squad
-      await team.addPlayer(player);
-
-      res.status(200).json({
-        message: "Player added to squad successfully",
-        player_id: player.player_id,
-      });
-    } catch (error) {
-      console.error("Error adding player to squad:", error);
-      res.status(500).json({ error: "Internal Server Error" });
+    if (!team) {
+      return res.status(404).json({ error: "Team not found" });
     }
+
+    const player = await Player.create({
+      name,
+      role,
+    });
+
+    // Add the player to the team's squad
+    await team.addPlayer(player);
+
+    res.status(200).json({
+      message: "Player added to squad successfully",
+      player_id: player.player_id,
+    });
+  } catch (error) {
+    console.error("Error adding player to squad:", error);
+    res.status(500).json({ error: "Internal Server Error" });
   }
-);
+});
 
 // GET PLAYER STATS
 router.get("/players/:player_id/stats", async (req: Request, res: Response) => {
@@ -220,5 +218,66 @@ router.get("/players/:player_id/stats", async (req: Request, res: Response) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
+
+// CREATE MATCH
+router.post("/matches", checkAuthorization, async (req, res) => {
+  try {
+    // Extract match data from the request body
+    const { team_1, team_2, date, venue } = req.body;
+
+    // Create a new match
+    const match = await Match.create({
+      team_1,
+      team_2,
+      date,
+      venue,
+      status: "upcoming",
+      squads: {
+        team_1: [],
+        team_2: [],
+      },
+    });
+
+    res.status(200).json({
+      message: "Match created successfully",
+      match_id: match.id,
+    });
+  } catch (error) {
+    console.error("Error creating match:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// GET MATCHES
+router.get("/matches", async (req, res) => {
+  try {
+    // Fetch all matches from the database
+    const matches = await Match.findAll();
+
+    // Map the matches to the desired response format
+    const matchesResponse = matches.map(
+      (match: {
+        id: any;
+        team_1: any;
+        team_2: any;
+        date: any;
+        venue: any;
+      }) => ({
+        match_id: match.id,
+        team_1: match.team_1,
+        team_2: match.team_2,
+        date: match.date,
+        venue: match.venue,
+      })
+    );
+
+    res.status(200).json({ matches: matchesResponse });
+  } catch (error) {
+    console.error("Error fetching matches:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// 
 
 export default router;

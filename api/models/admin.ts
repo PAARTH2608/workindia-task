@@ -3,9 +3,9 @@ import { sequelize } from '../config/connectDB';
 
 const Admin = sequelize.define('Admin', {
   id: {
-    type: DataTypes.INTEGER,
+    type: DataTypes.UUID,
     primaryKey: true,
-    autoIncrement: true,
+    defaultValue: DataTypes.UUIDV4,
   },
   username: {
     type: DataTypes.STRING,

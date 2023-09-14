@@ -3,9 +3,9 @@ import { sequelize } from '../config/connectDB';
 
 const Player = sequelize.define('Player', {
   id: {
-    type: DataTypes.STRING,
+    type: DataTypes.UUID,
     primaryKey: true,
-    autoIncrement: true,
+    defaultValue: DataTypes.UUIDV4,
   },
   name: {
     type: DataTypes.STRING,
