@@ -278,6 +278,38 @@ router.get("/matches", async (req, res) => {
   }
 });
 
-// 
+// GET MATCH SCHEDULES
+router.get("/matches/:match_id", async (req, res) => {
+  try {
+    // Extract match_id from the URL parameter
+    const { match_id } = req.params;
+
+    // Find the match by match_id and include associated teams and players
+    const match = await Match.findByPk(match_id);
+
+    if (!match) {
+      return res.status(404).json({ error: "Match not found" });
+    }
+
+    // Map the squads to the desired response format
+    const team1 = 
+
+    // Prepare the response data
+    const matchResponse = {
+      match_id: match.id,
+      team_1: match.team_1.name,
+      team_2: match.team_2.name,
+      date: match.date,
+      venue: match.venue,
+      status: match.status,
+      squads: squadsResponse,
+    };
+
+    res.status(200).json(matchResponse);
+  } catch (error) {
+    console.error("Error fetching match by match_id:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
 
 export default router;
