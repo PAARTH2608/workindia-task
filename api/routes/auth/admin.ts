@@ -12,6 +12,7 @@ router.post("/admin/signup", async (req: Request, res: Response) => {
   try {
     const { username, password, email } = req.body;
 
+    // Hash the password before saving it
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const admin = await Admin.create({
@@ -99,7 +100,6 @@ router.post(
 router.post("/admin/create-player", async (req: Request, res: Response) => {
   try {
     const {
-      player_id,
       name,
       role,
       matches_played,
@@ -109,7 +109,6 @@ router.post("/admin/create-player", async (req: Request, res: Response) => {
     } = req.body;
 
     const player = await Player.create({
-      player_id,
       name,
       role,
       matches_played,
@@ -121,7 +120,7 @@ router.post("/admin/create-player", async (req: Request, res: Response) => {
     res.status(200).json({
       status: "Player successfully created",
       status_code: 200,
-      player_id: player.player_id,
+      player_id: player.id,
     });
   } catch (error) {
     console.error("Error creating player:", error);
@@ -170,7 +169,7 @@ router.post("/teams/:team_id/squad", async (req: Request, res: Response) => {
 
     res.status(200).json({
       message: "Player added to squad successfully",
-      player_id: player.player_id,
+      player_id: player.id,
     });
   } catch (error) {
     console.error("Error adding player to squad:", error);
@@ -184,7 +183,7 @@ router.get("/players/:player_id/stats", async (req: Request, res: Response) => {
     const { player_id: playerId } = req.params;
 
     const player = await Player.findOne({
-      where: { player_id: playerId },
+      where: { id: playerId },
     });
 
     if (!player) {
